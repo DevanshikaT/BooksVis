@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goodreads Visual Stories</title>
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+<style>
+body{margin:0;font-family:sans-serif;background:#111;color:#eee;line-height:1.4}
+header{position:fixed;top:0;width:100%;background:#222;padding:10px 20px;box-shadow:0 2px 4px rgba(0,0,0,0.4);z-index:10}
+header a{color:#09f;margin-right:15px;text-decoration:none}
+main{max-width:960px;margin:80px auto;padding:0 10px}
+section{margin-bottom:60px;background:#222;padding:20px;border-radius:8px;box-shadow:0 4px 8px rgba(0,0,0,0.4)}
+.plot{height:400px}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+<header>
+<a href="#pages_vs_rating">Pages vs Rating</a>
+<a href="#author_output_vs_rating">Author Output vs Rating</a>
+<a href="#desc_sentiment_vs_rating">Description Sentiment vs Rating</a>
+<a href="#popularity_vs_rating">Popularity vs Rating</a>
+</header>
+<main>
+<section id="pages_vs_rating"><div class="plot" id="plot1"></div></section>
+<section id="author_output_vs_rating"><div class="plot" id="plot2"></div></section>
+<section id="desc_sentiment_vs_rating"><div class="plot" id="plot3"></div></section>
+<section id="popularity_vs_rating"><div class="plot" id="plot4"></div></section>
+</main>
+<script>
+async function fetchData(name){const r=await fetch('data/'+name+'.json');return r.json()}
+function pearson(x,y){let n=x.length,sx=0,sy=0,sxy=0,sx2=0,sy2=0;for(let i=0;i<n;i++){sx+=x[i];sy+=y[i];sxy+=x[i]*y[i];sx2+=x[i]*x[i];sy2+=y[i]*y[i]}let num=n*sxy-sx*sy;let den=Math.sqrt((n*sx2-sx*sx)*(n*sy2-sy*sy));return num/den}
+function erf(x){const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;const sign=Math.sign(x);x=Math.abs(x);const t=1/(1+p*x);const y=1-((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);return sign*y}
+function normalCdf(x){return 0.5*(1+erf(x/Math.SQRT2))}
+function pValue(r,n){let t=r*Math.sqrt(n-2)/Math.sqrt(1-r*r);return 2*(1-normalCdf(Math.abs(t)))}
+async function makePlot(name,id){let data=await fetchData(name);let x=data.map(d=>d.x),y=data.map(d=>d.y);let r=pearson(x,y);let p=pValue(r,x.length);let title=`${name.replace(/_/g,' ')} (r=${r.toFixed(2)}, p=${p.toExponential(2)})`;Plotly.newPlot(id,[{type:'scatter',mode:'markers',x,y,marker:{color:'#1f77b4',opacity:0.6}}],{title,margin:{t:50,l:40,r:20,b:40},paper_bgcolor:'#222',plot_bgcolor:'#222',font:{size:20,color:'#eee'},xaxis:{gridcolor:'#444'},yaxis:{gridcolor:'#444'}},{responsive:true})}
+makePlot('pages_vs_rating','plot1');
+makePlot('author_output_vs_rating','plot2');
+makePlot('desc_sentiment_vs_rating','plot3');
+makePlot('popularity_vs_rating','plot4');
+</script>
+</body>
+</html>
